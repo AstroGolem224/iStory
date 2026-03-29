@@ -1,0 +1,13 @@
+package com.storybuilder.data.ai.client.openai
+
+import retrofit2.http.Body
+import retrofit2.http.Header
+import retrofit2.http.POST
+
+interface OpenAIService {
+    @POST("chat/completions")
+    suspend fun createChatCompletion(
+        @Header("Authorization") authorization: String,
+        @Body request: OpenAIRequest
+    ): OpenAIResponse
+}
