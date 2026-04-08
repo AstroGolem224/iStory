@@ -76,7 +76,7 @@ class NimClient @Inject constructor(
                 messages = listOf(
                     NimMessage(role = "user", content = "Say 'OK' and nothing else.")
                 ),
-                temperature = 0.0f,
+                temperature = 0.7f,
                 maxTokens = 10,
                 stream = false
             )

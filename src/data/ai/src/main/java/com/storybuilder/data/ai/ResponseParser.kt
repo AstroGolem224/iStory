@@ -20,8 +20,10 @@ class ResponseParser @Inject constructor() {
         sequenceOrder: Int
     ): Result<StoryBeat> {
         return try {
-            val jsonText = extractJsonText(geminiResponse)
+            val rawText = extractJsonText(geminiResponse)
                 ?: return Result.failure(IllegalStateException("No text content in response"))
+
+            val jsonText = rawText.replace(Regex("```xml|```json|```\\w*\\s*"), "").replace(Regex("```\\s*$"), "").trim()
 
             val storyBeatResponse = gson.fromJson(jsonText, StoryBeatResponse::class.java)
                 ?: return Result.failure(JsonParseException("Failed to parse JSON response"))

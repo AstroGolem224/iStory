@@ -70,9 +70,22 @@ class OpenRouterClient @Inject constructor(
 
     override suspend fun testConnection(credentials: ApiCredentials): Result<Boolean> {
         return try {
-            // Try to list models as a connection test
+            val request = OpenRouterRequest(
+                model = credentials.modelName,
+                messages = listOf(
+                    OpenRouterMessage(role = "user", content = "Say 'OK' and nothing else.")
+                ),
+                temperature = 0.7f,
+                maxTokens = 10
+            )
+
             val authHeader = "Bearer ${credentials.apiKey}"
-            service.listModels(authHeader)
+            val response = service.createChatCompletion(authHeader, request = request)
+
+            if (response.error != null) {
+                return handleOpenRouterError(response.error).map { false }
+            }
+
             Result.success(true)
         } catch (e: HttpException) {
             val result: Result<Boolean> = handleHttpException(e)

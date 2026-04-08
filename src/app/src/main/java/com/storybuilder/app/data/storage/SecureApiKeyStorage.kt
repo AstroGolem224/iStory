@@ -74,9 +74,14 @@ class SecureApiKeyStorage @Inject constructor(
     }
     
     fun clearApiKey(provider: ApiProvider) {
-        encryptedPrefs.edit()
+        val editor = encryptedPrefs.edit()
             .remove(getApiKeyKey(provider))
-            .apply()
+            
+        if (provider == ApiProvider.GOOGLE) {
+            editor.remove(KEY_GEMINI_API_KEY)
+        }
+        
+        editor.apply()
     }
     
     fun setActiveProvider(provider: ApiProvider) {
