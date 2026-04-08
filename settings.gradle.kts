@@ -23,6 +23,14 @@ rootProject.name = "StoryBuilder"
 include(":app")
 project(":app").projectDir = file("src/app")
 
+// Parent module mappings for Gradle
+include(":data")
+project(":data").projectDir = file("src/data")
+include(":feature")
+project(":feature").projectDir = file("src/feature")
+include(":core")
+project(":core").projectDir = file("src/core")
+
 include(":domain")
 project(":domain").projectDir = file("src/domain")
 
