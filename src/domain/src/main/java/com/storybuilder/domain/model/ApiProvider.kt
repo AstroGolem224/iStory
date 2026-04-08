@@ -40,16 +40,19 @@ object ProviderModels {
     )
     
     val OPENROUTER_MODELS = listOf(
-        ProviderModel("openai/gpt-4o", "OpenAI GPT-4o (via OpenRouter)", "OpenAI model through OpenRouter"),
-        ProviderModel("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet (via OpenRouter)", "Anthropic model through OpenRouter"),
-        ProviderModel("meta-llama/llama-3.1-70b-instruct", "Llama 3.1 70B", "Meta's Llama model"),
-        ProviderModel("mistralai/mistral-large", "Mistral Large", "Mistral's flagship model")
+        ProviderModel("google/gemini-2.0-flash-lite-preview-02-05:free", "Gemini 2.0 Flash Lite (Free)", "Free experimental Gemini model"),
+        ProviderModel("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B (Free)", "Free Meta model"),
+        ProviderModel("qwen/qwen-2-72b-instruct:free", "Qwen 2 72B (Free)", "Free Qwen model"),
+        ProviderModel("openai/gpt-4o", "OpenAI GPT-4o", "OpenAI Flagship"),
+        ProviderModel("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet", "Anthropic Flagship"),
+        ProviderModel("meta-llama/llama-3.3-70b-instruct", "Llama 3.3 70B", "Meta Flagship")
     )
     
     val NIM_MODELS = listOf(
-        ProviderModel("meta/llama-3.1-70b-instruct", "Llama 3.1 70B", "Meta's Llama via NVIDIA NIM"),
+        ProviderModel("meta/llama-3.1-8b-instruct", "Llama 3.1 8B", "Meta's lightweight Llama via NVIDIA NIM"),
+        ProviderModel("meta/llama-3.3-70b-instruct", "Llama 3.3 70B", "Meta's flagship Llama via NVIDIA"),
         ProviderModel("mistralai/mistral-large", "Mistral Large", "Mistral via NVIDIA NIM"),
-        ProviderModel("nvidia/nemotron-4-340b-instruct", "Nemotron 4 340B", "NVIDIA's largest model")
+        ProviderModel("nvidia/llama-3.1-nemotron-70b-instruct", "Nemotron 70B", "NVIDIA's optimized model")
     )
     
     fun getModelsForProvider(provider: ApiProvider): List<ProviderModel> {
@@ -67,8 +70,8 @@ object ProviderModels {
             ApiProvider.OPENAI -> "gpt-4o"
             ApiProvider.ANTHROPIC -> "claude-3-5-sonnet-latest"
             ApiProvider.GOOGLE -> "gemini-1.5-pro-latest"
-            ApiProvider.OPENROUTER -> "openai/gpt-4o"
-            ApiProvider.NIM -> "meta/llama-3.1-70b-instruct"
+            ApiProvider.OPENROUTER -> "google/gemini-2.0-flash-lite-preview-02-05:free"
+            ApiProvider.NIM -> "meta/llama-3.1-8b-instruct"
         }
     }
 }

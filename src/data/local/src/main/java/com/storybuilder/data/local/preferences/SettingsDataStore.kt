@@ -86,8 +86,8 @@ class SettingsDataStore @Inject constructor(
         const val DEFAULT_OPENAI_MODEL = "gpt-4o"
         const val DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-latest"
         const val DEFAULT_GOOGLE_MODEL = "gemini-1.5-pro-latest"
-        const val DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o"
-        const val DEFAULT_NIM_MODEL = "meta/llama-3.1-70b-instruct"
+        const val DEFAULT_OPENROUTER_MODEL = "google/gemini-2.0-flash-lite-preview-02-05:free"
+        const val DEFAULT_NIM_MODEL = "meta/llama-3.1-8b-instruct"
     }
 
     // ==================== Multi-Provider API Configuration ====================
