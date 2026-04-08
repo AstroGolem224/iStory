@@ -124,101 +124,76 @@ class SettingsDataStore @Inject constructor(
         return getActiveProvider().first()
     }
     
-    fun getProviderConfigurations(): Flow<ProviderConfigurations> {
-        return combine(
-            // API Keys
-            context.dataStore.data.map { it[OPENAI_API_KEY] ?: "" },
-            context.dataStore.data.map { it[ANTHROPIC_API_KEY] ?: "" },
-            context.dataStore.data.map { it[GOOGLE_API_KEY] ?: "" },
-            context.dataStore.data.map { it[OPENROUTER_API_KEY] ?: "" },
-            context.dataStore.data.map { it[NIM_API_KEY] ?: "" },
-            // Legacy migration
-            context.dataStore.data.map { it[GEMINI_API_KEY] ?: "" },
-            // Models
-            context.dataStore.data.map { it[OPENAI_MODEL] ?: DEFAULT_OPENAI_MODEL },
-            context.dataStore.data.map { it[ANTHROPIC_MODEL] ?: DEFAULT_ANTHROPIC_MODEL },
-            context.dataStore.data.map { it[GOOGLE_MODEL] ?: DEFAULT_GOOGLE_MODEL },
-            context.dataStore.data.map { it[OPENROUTER_MODEL] ?: DEFAULT_OPENROUTER_MODEL },
-            context.dataStore.data.map { it[NIM_MODEL] ?: DEFAULT_NIM_MODEL },
-            // Base URLs
-            context.dataStore.data.map { it[OPENAI_BASE_URL] },
-            context.dataStore.data.map { it[ANTHROPIC_BASE_URL] },
-            context.dataStore.data.map { it[GOOGLE_BASE_URL] },
-            context.dataStore.data.map { it[OPENROUTER_BASE_URL] },
-            context.dataStore.data.map { it[NIM_BASE_URL] },
-            // Active Provider
-            getActiveProvider()
-        ) { values ->
-            @Suppress("UNCHECKED_CAST")
-            val providers = mutableMapOf<ApiProvider, ApiCredentials>()
-            
-            // Handle legacy Google/Gemini API key
-            val legacyGoogleKey = values[5] as String
-            val googleKey = values[2] as String
-            val finalGoogleKey = googleKey.ifBlank { legacyGoogleKey }
-            
-            // OpenAI
-            (values[0] as String).takeIf { it.isNotBlank() }?.let { key ->
-                providers[ApiProvider.OPENAI] = ApiCredentials(
-                    provider = ApiProvider.OPENAI,
-                    apiKey = key,
-                    baseUrl = values[10] as? String,
-                    modelName = values[5] as String,
-                    isActive = false
-                )
-            }
-            
-            // Anthropic
-            (values[1] as String).takeIf { it.isNotBlank() }?.let { key ->
-                providers[ApiProvider.ANTHROPIC] = ApiCredentials(
-                    provider = ApiProvider.ANTHROPIC,
-                    apiKey = key,
-                    baseUrl = values[11] as? String,
-                    modelName = values[6] as String,
-                    isActive = false
-                )
-            }
-            
-            // Google
-            finalGoogleKey.takeIf { it.isNotBlank() }?.let { key ->
-                providers[ApiProvider.GOOGLE] = ApiCredentials(
-                    provider = ApiProvider.GOOGLE,
-                    apiKey = key,
-                    baseUrl = values[12] as? String,
-                    modelName = values[7] as String,
-                    isActive = false
-                )
-            }
-            
-            // OpenRouter
-            (values[3] as String).takeIf { it.isNotBlank() }?.let { key ->
-                providers[ApiProvider.OPENROUTER] = ApiCredentials(
-                    provider = ApiProvider.OPENROUTER,
-                    apiKey = key,
-                    baseUrl = values[13] as? String,
-                    modelName = values[8] as String,
-                    isActive = false
-                )
-            }
-            
-            // NIM
-            (values[4] as String).takeIf { it.isNotBlank() }?.let { key ->
-                providers[ApiProvider.NIM] = ApiCredentials(
-                    provider = ApiProvider.NIM,
-                    apiKey = key,
-                    baseUrl = values[14] as? String,
-                    modelName = values[9] as String,
-                    isActive = false
-                )
-            }
-            
-            val activeProvider = values[15] as ApiProvider
-            
-            ProviderConfigurations(
-                providers = providers,
-                activeProvider = activeProvider
+    fun getProviderConfigurations(): Flow<ProviderConfigurations> = context.dataStore.data.map { preferences ->
+        val providers = mutableMapOf<ApiProvider, ApiCredentials>()
+        
+        // Handle legacy Google/Gemini API key
+        val legacyGoogleKey = preferences[GEMINI_API_KEY] ?: ""
+        val googleKey = preferences[GOOGLE_API_KEY] ?: ""
+        val finalGoogleKey = googleKey.ifBlank { legacyGoogleKey }
+        
+        // OpenAI
+        (preferences[OPENAI_API_KEY] ?: "").takeIf { it.isNotBlank() }?.let { key ->
+            providers[ApiProvider.OPENAI] = ApiCredentials(
+                provider = ApiProvider.OPENAI,
+                apiKey = key,
+                baseUrl = preferences[OPENAI_BASE_URL],
+                modelName = preferences[OPENAI_MODEL] ?: DEFAULT_OPENAI_MODEL,
+                isActive = false
             )
         }
+        
+        // Anthropic
+        (preferences[ANTHROPIC_API_KEY] ?: "").takeIf { it.isNotBlank() }?.let { key ->
+            providers[ApiProvider.ANTHROPIC] = ApiCredentials(
+                provider = ApiProvider.ANTHROPIC,
+                apiKey = key,
+                baseUrl = preferences[ANTHROPIC_BASE_URL],
+                modelName = preferences[ANTHROPIC_MODEL] ?: DEFAULT_ANTHROPIC_MODEL,
+                isActive = false
+            )
+        }
+        
+        // Google
+        finalGoogleKey.takeIf { it.isNotBlank() }?.let { key ->
+            providers[ApiProvider.GOOGLE] = ApiCredentials(
+                provider = ApiProvider.GOOGLE,
+                apiKey = key,
+                baseUrl = preferences[GOOGLE_BASE_URL],
+                modelName = preferences[GOOGLE_MODEL] ?: DEFAULT_GOOGLE_MODEL,
+                isActive = false
+            )
+        }
+        
+        // OpenRouter
+        (preferences[OPENROUTER_API_KEY] ?: "").takeIf { it.isNotBlank() }?.let { key ->
+            providers[ApiProvider.OPENROUTER] = ApiCredentials(
+                provider = ApiProvider.OPENROUTER,
+                apiKey = key,
+                baseUrl = preferences[OPENROUTER_BASE_URL],
+                modelName = preferences[OPENROUTER_MODEL] ?: DEFAULT_OPENROUTER_MODEL,
+                isActive = false
+            )
+        }
+        
+        // NIM
+        (preferences[NIM_API_KEY] ?: "").takeIf { it.isNotBlank() }?.let { key ->
+            providers[ApiProvider.NIM] = ApiCredentials(
+                provider = ApiProvider.NIM,
+                apiKey = key,
+                baseUrl = preferences[NIM_BASE_URL],
+                modelName = preferences[NIM_MODEL] ?: DEFAULT_NIM_MODEL,
+                isActive = false
+            )
+        }
+        
+        val activeProviderName = preferences[ACTIVE_PROVIDER]
+        val activeProvider = ApiProvider.fromString(activeProviderName ?: "") ?: ApiProvider.GOOGLE
+        
+        ProviderConfigurations(
+            providers = providers,
+            activeProvider = activeProvider
+        )
     }
     
     suspend fun getProviderConfigurationsSync(): ProviderConfigurations {
