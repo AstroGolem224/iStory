@@ -14,7 +14,7 @@ class SecureApiKeyStorage @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        private const val PREFS_NAME = "secure_api_prefs"
+        private const val PREFS_NAME = "secure_api_prefs_v3"
         
         // Legacy keys
         private const val KEY_GEMINI_API_KEY = "gemini_api_key"
@@ -44,14 +44,27 @@ class SecureApiKeyStorage @Inject constructor(
     }
 
     private val encryptedPrefs by lazy {
-        EncryptedSharedPreferences.create(
-            context,
-            PREFS_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        try {
+            createEncryptedPrefs()
+        } catch (e: Exception) {
+            // If creation fails due to Keystore corruption, clear the prefs and try again
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
+            try {
+                createEncryptedPrefs()
+            } catch (e2: Exception) {
+                // Return a non-encrypted fallback or let it crash if it's truly broken
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            }
+        }
     }
+
+    private fun createEncryptedPrefs() = EncryptedSharedPreferences.create(
+        context,
+        PREFS_NAME,
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
 
     // ==================== Multi-Provider Methods ====================
     

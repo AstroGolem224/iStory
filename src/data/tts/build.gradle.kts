@@ -41,8 +41,8 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.48")
-    ksp("com.google.dagger:hilt-compiler:2.48")
+    implementation("com.google.dagger:hilt-android:2.57.2")
+    ksp("com.google.dagger:hilt-compiler:2.57.2")
 
     testImplementation("junit:junit:4.13.2")
 }

@@ -18,6 +18,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -216,12 +217,8 @@ class ChatPlayerViewModel @Inject constructor(
             
             val currentBeat = _uiState.value.currentBeat
             
-            val previousBeats = storyBeatRepository.getBeatsForStory(storyId)
-                .let { flow ->
-                    var beats: List<StoryBeat> = emptyList()
-                    flow.collect { beats = it }
-                    beats.sortedBy { it.sequenceOrder }
-                }
+            val previousBeats = storyBeatRepository.getBeatsForStory(storyId).first()
+                .sortedBy { it.sequenceOrder }
 
             val result = submitTextChoiceUseCase(
                 story = story,
@@ -271,12 +268,8 @@ class ChatPlayerViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            val previousBeats = storyBeatRepository.getBeatsForStory(storyId)
-                .let { flow ->
-                    var beats: List<StoryBeat> = emptyList()
-                    flow.collect { beats = it }
-                    beats.sortedBy { it.sequenceOrder }
-                }
+            val previousBeats = storyBeatRepository.getBeatsForStory(storyId).first()
+                .sortedBy { it.sequenceOrder }
 
             val result = selectOptionUseCase(
                 story = story,
