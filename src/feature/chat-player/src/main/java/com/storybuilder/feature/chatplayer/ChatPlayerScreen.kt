@@ -1,3 +1,8 @@
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.animation.ExperimentalAnimationApi::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class
+)
 package com.storybuilder.feature.chatplayer
 
 import androidx.compose.animation.AnimatedContent
@@ -56,19 +61,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.storybuilder.domain.model.ChatMessage
 import com.storybuilder.domain.model.InputMode
 import com.storybuilder.domain.model.SenderType
+import com.storybuilder.core.ui.theme.AetheriaDeepSpace
+import com.storybuilder.core.ui.theme.GenreThemedBackground
 import com.storybuilder.feature.chatplayer.components.NarratorBubble
 import com.storybuilder.feature.chatplayer.components.SystemMessage
 import com.storybuilder.feature.chatplayer.components.UserBubble
 import com.storybuilder.feature.optionselection.OptionCards
 import com.storybuilder.feature.textinput.TextInputBar
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class, 
-         androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun ChatPlayerScreen(
     onNavigateBack: () -> Unit = {},
@@ -106,24 +112,37 @@ fun ChatPlayerScreen(
         modifier = Modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .imePadding(),
+        containerColor = Color.Transparent, // Make Scaffold transparent to see GenreThemedBackground
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(uiState.story?.title ?: "Story") },
+                title = { Text(uiState.story?.title ?: "Story", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
                     }
                 },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Black.copy(alpha = 0.5f)
+                ),
                 scrollBehavior = scrollBehavior
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+        GenreThemedBackground(
+            genreId = uiState.story?.genreId ?: "fantasy",
+            modifier = Modifier.fillMaxSize()
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -173,6 +192,7 @@ fun ChatPlayerScreen(
         }
     }
 }
+}
 
 @Composable
 private fun InputSection(
@@ -186,8 +206,8 @@ private fun InputSection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        tonalElevation = 4.dp,
-        color = MaterialTheme.colorScheme.surface
+        tonalElevation = 8.dp,
+        color = Color.Black.copy(alpha = 0.4f) // Glassy input section
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()

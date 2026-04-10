@@ -5,11 +5,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = AetheriaNeonCyan,
+    secondary = AetheriaNeonPurple,
+    tertiary = AetheriaNeonGold,
+    background = AetheriaDeepSpace,
+    surface = Color(0xFF101018),
+    onPrimary = Color.Black,
+    onBackground = AetheriaTextMain,
+    onSurface = AetheriaTextMain
 )
 
 private val LightColorScheme = lightColorScheme(

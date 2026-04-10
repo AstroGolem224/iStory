@@ -19,6 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.storybuilder.core.ui.components.GlassSurface
+import com.storybuilder.core.ui.theme.AetheriaNeonCyan
+import com.storybuilder.core.ui.theme.AetheriaNeonPurple
+import com.storybuilder.core.ui.theme.AetheriaTextMain
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun OptionCards(
@@ -34,7 +40,7 @@ fun OptionCards(
         Text(
             text = "Choose your action:",
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
+            color = AetheriaNeonCyan
         )
         Spacer(modifier = Modifier.height(8.dp))
         options.forEachIndexed { index, option ->
@@ -56,14 +62,10 @@ private fun OptionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    GlassSurface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
@@ -73,14 +75,15 @@ private fun OptionCard(
         ) {
             Surface(
                 shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = AetheriaNeonPurple.copy(alpha = 0.2f),
+                border = BorderStroke(1.dp, AetheriaNeonPurple),
                 modifier = Modifier.padding(end = 12.dp)
             ) {
                 Text(
                     text = "${optionIndex + 1}",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = AetheriaNeonPurple,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                 )
             }
@@ -90,7 +93,7 @@ private fun OptionCard(
             Text(
                 text = option,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = AetheriaTextMain
             )
         }
     }
