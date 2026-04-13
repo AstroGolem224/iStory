@@ -14,7 +14,7 @@ data class StoryBeatEntity(
     val storyId: String,
     val sequenceOrder: Int,
     val narratorText: String,
-    val suggestedOptionsJson: String? = null,
+    val suggestedOptions: List<String>? = null,
     val selectedOptionIndex: Int? = null,
     val freeTextInput: String? = null,
     val createdAt: Long

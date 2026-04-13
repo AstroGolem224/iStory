@@ -1,15 +1,41 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+/.idea/
 .DS_Store
 /build
+**/build/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Logs and temp files
+*.log
+*.txt
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+all_files.txt
+files.txt
+sources.txt
+sources_utf8.txt
+project.json
+projects.json
+columns.json
+temp_build.txt
+temp_err.txt
+gradle_error*.txt
+build_error*.txt
+crash_log*.txt
+install_*.txt
+clean_output.txt
+
+# Scripts
+fetch_models.py
+sync_tasks.py
+updater.py
+
+# Metadata/Config
+.claude/
+.vscode/

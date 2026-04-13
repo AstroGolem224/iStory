@@ -15,8 +15,6 @@ class ChatMessageRepositoryImpl @Inject constructor(
     private val chatMessageDao: ChatMessageDao
 ) : ChatMessageRepository {
 
-    private val converters = Converters()
-
     override fun getMessagesForStory(storyId: String): Flow<List<ChatMessage>> {
         return chatMessageDao.getMessagesForStory(storyId).map { entities ->
             entities.map { it.toDomain() }
@@ -42,9 +40,9 @@ class ChatMessageRepositoryImpl @Inject constructor(
             senderType = SenderType.valueOf(senderType),
             content = content,
             timestamp = timestamp,
-            metadata = if (suggestedOptionsJson != null) {
+            metadata = if (suggestedOptions != null) {
                 MessageMetadata(
-                    suggestedOptions = converters.fromStringList(suggestedOptionsJson),
+                    suggestedOptions = suggestedOptions,
                     selectedOptionIndex = selectedOptionIndex
                 )
             } else null
@@ -58,7 +56,7 @@ class ChatMessageRepositoryImpl @Inject constructor(
             senderType = senderType.name,
             content = content,
             timestamp = timestamp,
-            suggestedOptionsJson = converters.toStringList(metadata?.suggestedOptions),
+            suggestedOptions = metadata?.suggestedOptions,
             selectedOptionIndex = metadata?.selectedOptionIndex
         )
     }

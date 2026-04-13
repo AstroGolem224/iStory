@@ -121,16 +121,9 @@ fun StoryBuilderNavHost(
             }
 
             composable(Screen.CharacterCreate.route) {
-                val genre = navController.previousBackStackEntry
-                    ?.savedStateHandle?.get<com.storybuilder.domain.model.Genre>("selectedGenre")
-                val darknessLevel = navController.previousBackStackEntry
-                    ?.savedStateHandle?.get<Int>("darknessLevel") ?: 5
-                val pacingName = navController.previousBackStackEntry
-                    ?.savedStateHandle?.get<String>("pacing") ?: "MEDIUM"
-                
                 CharacterCreateScreen(
-                    onCharacterCreated = { character ->
-                        navController.navigate(Screen.ChatPlayer.createRoute("new")) {
+                    onStoryCreated = { storyId ->
+                        navController.navigate(Screen.ChatPlayer.createRoute(storyId)) {
                             popUpTo(Screen.GenreSelect.route) { inclusive = true }
                         }
                     },

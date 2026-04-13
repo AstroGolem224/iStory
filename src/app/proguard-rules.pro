@@ -32,8 +32,9 @@
     <init>();
 }
 
-# Keep domain models for JSON serialization
+# Keep domain models and entities for JSON serialization
 -keep class com.storybuilder.domain.model.** { *; }
+-keep class com.storybuilder.data.ai.model.** { *; }
 -keep class com.storybuilder.data.local.entity.** { *; }
 
 # Retrofit/OkHttp (if used)

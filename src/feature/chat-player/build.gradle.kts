@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":feature:option-selection"))
     implementation(project(":feature:text-input"))
+    implementation(project(":data:stt"))
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")

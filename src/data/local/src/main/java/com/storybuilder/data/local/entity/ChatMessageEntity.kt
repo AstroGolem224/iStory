@@ -15,6 +15,6 @@ data class ChatMessageEntity(
     val senderType: String, // NARRATOR, USER, SYSTEM
     val content: String,
     val timestamp: Long,
-    val suggestedOptionsJson: String? = null,
+    val suggestedOptions: List<String>? = null,
     val selectedOptionIndex: Int? = null
 )

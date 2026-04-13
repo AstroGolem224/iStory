@@ -16,6 +16,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.storybuilder.core.ui.components.GlassSurface
+import com.storybuilder.core.ui.theme.AetheriaNeonPurple
+import com.storybuilder.core.ui.theme.AetheriaTextMain
 import com.storybuilder.core.ui.theme.UserBubbleColor
 
 @Composable
@@ -27,24 +30,24 @@ fun UserBubble(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.CenterEnd
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 340.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(UserBubbleColor)
-                .padding(16.dp)
+        GlassSurface(
+            modifier = Modifier.widthIn(max = 340.dp)
         ) {
-            Text(
-                text = "You",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.7f)
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
-                textAlign = TextAlign.Start
-            )
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "You",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AetheriaNeonPurple.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = AetheriaTextMain,
+                    textAlign = TextAlign.Start
+                )
+            }
         }
     }
 }

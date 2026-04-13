@@ -52,8 +52,7 @@ class SecureApiKeyStorage @Inject constructor(
             try {
                 createEncryptedPrefs()
             } catch (e2: Exception) {
-                // Return a non-encrypted fallback or let it crash if it's truly broken
-                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                throw IllegalStateException("Failed to initialize Secure Space. Device Keystore may be corrupted. Please reinstall the app.", e2)
             }
         }
     }

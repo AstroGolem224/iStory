@@ -1,115 +1,60 @@
-@file:OptIn(
-    androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.animation.ExperimentalAnimationApi::class,
-    androidx.compose.ui.ExperimentalComposeUiApi::class
-)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.storybuilder.feature.chatplayer
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.DashboardCustomize
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.storybuilder.core.ui.theme.GenreThemedBackground
 import com.storybuilder.domain.model.ChatMessage
 import com.storybuilder.domain.model.InputMode
 import com.storybuilder.domain.model.SenderType
-import com.storybuilder.core.ui.theme.AetheriaDeepSpace
-import com.storybuilder.core.ui.theme.GenreThemedBackground
-import com.storybuilder.feature.chatplayer.components.NarratorBubble
-import com.storybuilder.feature.chatplayer.components.SystemMessage
-import com.storybuilder.feature.chatplayer.components.UserBubble
+import com.storybuilder.feature.chatplayer.components.*
 import com.storybuilder.feature.optionselection.OptionCards
 import com.storybuilder.feature.textinput.TextInputBar
+import kotlinx.coroutines.launch
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.*
 
 @Composable
 fun ChatPlayerScreen(
-    onNavigateBack: () -> Unit = {},
+    onNavigateBack: () -> Unit,
     viewModel: ChatPlayerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Auto-scroll to bottom when messages change
-    LaunchedEffect(uiState.messages.size, uiState.isLoading) {
+    // Auto-scroll to bottom of chat when new messages arrive
+    LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
             listState.animateScrollToItem(uiState.messages.size - 1)
         }
     }
 
-    // Auto-scroll when keyboard appears
-    LaunchedEffect(uiState.isKeyboardVisible) {
-        if (uiState.isKeyboardVisible && uiState.messages.isNotEmpty()) {
-            listState.animateScrollToItem(uiState.messages.size - 1)
-        }
-    }
-
-    // Show error snackbar
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { error ->
-            snackbarHostState.showSnackbar(message = error)
-            viewModel.dismissError()
-        }
-    }
-
     Scaffold(
         modifier = Modifier
+            .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .imePadding(),
         containerColor = Color.Transparent, // Make Scaffold transparent to see GenreThemedBackground
@@ -143,55 +88,115 @@ fun ChatPlayerScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    items(
-                        items = uiState.messages,
-                        key = { it.id }
-                    ) { message ->
-                        MessageItem(message = message)
-                    }
+                if (uiState.story == null && !uiState.isLoading && uiState.error != null) {
+                    FullScreenError(
+                        message = uiState.error!!,
+                        onRetry = { viewModel.retry() },
+                        onBack = onNavigateBack
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentPadding = PaddingValues(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            items(
+                                items = uiState.messages,
+                                key = { it.id }
+                            ) { message ->
+                                MessageItem(message = message)
+                            }
 
-                    // Show loading indicator at the bottom when generating
-                    if (uiState.isLoading) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
+                            if (uiState.messages.isEmpty() && !uiState.isLoading) {
+                                item {
+                                    EmptyChatPlaceholder()
+                                }
+                            }
+
+                            // Show loading indicator at the bottom when generating
+                            if (uiState.isLoading) {
+                                item {
+                                    NarratorBubbleSkeleton()
+                                }
                             }
                         }
+
+                        // Input Section with Mode Toggle
+                        InputSection(
+                            inputMode = uiState.inputMode,
+                            currentOptions = uiState.currentOptions,
+                            isLoading = uiState.isLoading,
+                            onModeChange = { viewModel.setInputMode(it) },
+                            onOptionSelected = { index -> viewModel.selectOption(index) },
+                            onFreeTextSubmitted = { text -> 
+                                viewModel.submitFreeText(text)
+                            },
+                            onVoiceInputRequested = { viewModel.onVoiceInputRequested() }
+                        )
+                    }
+                    
+                    // Voice Listening Overlay
+                    AnimatedVisibility(
+                        visible = uiState.isListening,
+                        enter = fadeIn() + slideInVertically { it },
+                        exit = fadeOut() + slideOutVertically { it },
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    ) {
+                        VoiceListeningOverlay(
+                            speechInput = uiState.speechInput,
+                            onCancel = { viewModel.onVoiceInputRequested() }
+                        )
                     }
                 }
-
-                // Input Section with Mode Toggle
-                InputSection(
-                    inputMode = uiState.inputMode,
-                    currentOptions = uiState.currentOptions,
-                    isLoading = uiState.isLoading,
-                    onModeChange = { viewModel.setInputMode(it) },
-                    onOptionSelected = { index -> viewModel.selectOption(index) },
-                    onFreeTextSubmitted = { text -> 
-                        viewModel.submitFreeText(text)
-                    },
-                    onVoiceInputRequested = { viewModel.onVoiceInputRequested() }
-                )
             }
         }
     }
 }
+
+@Composable
+private fun FullScreenError(
+    message: String,
+    onRetry: () -> Unit,
+    onBack: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Text(
+                text = "Wait, Traveler...",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text("Venture Again")
+            }
+            TextButton(onClick = onBack) {
+                Text("Return to Library", color = Color.White.copy(alpha = 0.5f))
+            }
+        }
+    }
 }
 
 @Composable
@@ -204,38 +209,29 @@ private fun InputSection(
     onFreeTextSubmitted: (String) -> Unit,
     onVoiceInputRequested: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        tonalElevation = 8.dp,
-        color = Color.Black.copy(alpha = 0.4f) // Glassy input section
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.3f))
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
+        InputModeToggle(
+            currentMode = inputMode,
+            onModeChange = onModeChange
+        )
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
         ) {
-            // Mode Toggle
-            InputModeToggle(
-                currentMode = inputMode,
-                onModeChange = onModeChange
-            )
-
-            Divider()
-
-            // Input Content based on mode
-            AnimatedContent(
-                targetState = inputMode,
-                label = "input_mode_content",
-                transitionSpec = {
-                    fadeIn() + slideInVertically { it / 2 } togetherWith
-                    fadeOut() + slideOutVertically { it / 2 }
-                }
-            ) { mode ->
-                when (mode) {
+            if (isLoading) {
+                // Input is disabled during generation
+            } else {
+                when (inputMode) {
                     InputMode.SUGGESTED_OPTIONS -> {
-                        // Show option cards if available and not loading
-                        AnimatedVisibility(
-                            visible = currentOptions.isNotEmpty() && !isLoading,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = Color.Transparent
                         ) {
                             OptionCards(
                                 options = currentOptions,
@@ -292,7 +288,7 @@ private fun InputModeToggle(
                     InputMode.SUGGESTED_OPTIONS -> Icons.Default.DashboardCustomize
                     InputMode.FREE_TEXT -> Icons.Default.Edit
                 },
-                contentDescription = null,
+                contentDescription = "Change Input Mode",
                 modifier = Modifier.padding(end = 8.dp)
             )
             Text(
@@ -363,6 +359,127 @@ private fun MessageItem(message: ChatMessage) {
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun NarratorBubbleSkeleton() {
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .alpha(alpha)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(20.dp)
+                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(20.dp)
+                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .height(20.dp)
+                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+        )
+    }
+}
+
+@Composable
+private fun EmptyChatPlaceholder() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.AutoAwesome,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.3f),
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Your adventure is about to begin...",
+                color = Color.White.copy(alpha = 0.5f),
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+@Composable
+private fun VoiceListeningOverlay(
+    speechInput: String,
+    onCancel: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.Black.copy(alpha = 0.8f),
+        tonalElevation = 8.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+            val scale by infiniteTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.2f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "scale"
+            )
+
+            Icon(
+                imageVector = Icons.Default.Mic,
+                contentDescription = null,
+                tint = Color.Red.copy(alpha = 0.8f),
+                modifier = Modifier
+                    .size(64.dp)
+                    .graphicsLayer(scaleX = scale, scaleY = scale)
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = if (speechInput.isBlank()) "Listening..." else speechInput,
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            TextButton(onClick = onCancel) {
+                Text("Cancel", color = Color.White.copy(alpha = 0.6f))
+            }
         }
     }
 }

@@ -13,8 +13,6 @@ class StoryBeatRepositoryImpl @Inject constructor(
     private val storyBeatDao: StoryBeatDao
 ) : StoryBeatRepository {
 
-    private val converters = Converters()
-
     override fun getBeatsForStory(storyId: String): Flow<List<StoryBeat>> {
         return storyBeatDao.getBeatsForStory(storyId).map { entities ->
             entities.map { it.toDomain() }
@@ -43,7 +41,7 @@ class StoryBeatRepositoryImpl @Inject constructor(
             storyId = storyId,
             sequenceOrder = sequenceOrder,
             narratorText = narratorText,
-            suggestedOptions = converters.fromStringList(suggestedOptionsJson),
+            suggestedOptions = suggestedOptions,
             selectedOptionIndex = selectedOptionIndex,
             freeTextInput = freeTextInput,
             createdAt = createdAt
@@ -56,7 +54,7 @@ class StoryBeatRepositoryImpl @Inject constructor(
             storyId = storyId,
             sequenceOrder = sequenceOrder,
             narratorText = narratorText,
-            suggestedOptionsJson = converters.toStringList(suggestedOptions),
+            suggestedOptions = suggestedOptions,
             selectedOptionIndex = selectedOptionIndex,
             freeTextInput = freeTextInput,
             createdAt = createdAt

@@ -16,6 +16,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.storybuilder.core.ui.components.GlassSurface
+import com.storybuilder.core.ui.theme.AetheriaNeonCyan
+import com.storybuilder.core.ui.theme.AetheriaTextMain
 import com.storybuilder.core.ui.theme.NarratorBubbleColor
 
 @Composable
@@ -27,24 +30,24 @@ fun NarratorBubble(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.CenterStart
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 340.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(NarratorBubbleColor)
-                .padding(16.dp)
+        GlassSurface(
+            modifier = Modifier.widthIn(max = 340.dp)
         ) {
-            Text(
-                text = "Narrator",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.7f)
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
-                textAlign = TextAlign.Start
-            )
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Narrator",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AetheriaNeonCyan.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = AetheriaTextMain,
+                    textAlign = TextAlign.Start
+                )
+            }
         }
     }
 }

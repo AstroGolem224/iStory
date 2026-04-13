@@ -33,13 +33,9 @@ class ResponseParser @Inject constructor() {
                 return Result.failure(IllegalStateException("Empty narrator text"))
             }
 
-            // For options mode, validate that we have 3 options
-            storyBeatResponse.suggestedOptions?.let { options ->
-                if (options.isNotEmpty() && options.size != 3) {
-                    return Result.failure(IllegalStateException(
-                        "Expected 3 options, got ${options.size}"
-                    ))
-                }
+            // For options mode, allow flexible count (up to 4) instead of strictly 3
+            val validatedOptions = storyBeatResponse.suggestedOptions?.let { options ->
+                if (options.isEmpty()) null else options.take(4)
             }
 
             val storyBeat = StoryBeat(
@@ -47,7 +43,7 @@ class ResponseParser @Inject constructor() {
                 storyId = storyId,
                 sequenceOrder = sequenceOrder,
                 narratorText = storyBeatResponse.narratorText.trim(),
-                suggestedOptions = storyBeatResponse.suggestedOptions?.map { it.trim() },
+                suggestedOptions = validatedOptions?.map { it.trim() },
                 selectedOptionIndex = null,
                 freeTextInput = null
             )

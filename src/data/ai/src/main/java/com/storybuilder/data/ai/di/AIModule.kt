@@ -12,6 +12,7 @@ import com.storybuilder.data.ai.client.openai.OpenAIClient
 import com.storybuilder.data.ai.client.openai.OpenAIService
 import com.storybuilder.data.ai.client.openrouter.OpenRouterClient
 import com.storybuilder.data.ai.client.openrouter.OpenRouterService
+import com.storybuilder.data.ai.interceptor.NetworkConnectionInterceptor
 import com.storybuilder.data.ai.repository.StoryAIRepositoryImpl
 import com.storybuilder.domain.model.ApiProvider
 import com.storybuilder.domain.repository.StoryAIRepository
@@ -44,11 +45,24 @@ abstract class AIModule {
         
         @Provides
         @Singleton
-        fun provideGeminiOkHttpClient(): OkHttpClient {
+        @Named("BaseOkHttpClient")
+        fun provideBaseOkHttpClient(
+            networkConnectionInterceptor: NetworkConnectionInterceptor
+        ): OkHttpClient {
             val loggingInterceptor = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             }
+            return OkHttpClient.Builder()
+                .addInterceptor(networkConnectionInterceptor)
+                .addInterceptor(loggingInterceptor)
+                .build()
+        }
 
+        @Provides
+        @Singleton
+        fun provideGeminiOkHttpClient(
+            @Named("BaseOkHttpClient") baseClient: OkHttpClient
+        ): OkHttpClient {
             val apiKeyInterceptor = Interceptor { chain ->
                 val original = chain.request()
                 val url = original.url.newBuilder()
@@ -60,9 +74,8 @@ abstract class AIModule {
                 chain.proceed(request)
             }
 
-            return OkHttpClient.Builder()
+            return baseClient.newBuilder()
                 .addInterceptor(apiKeyInterceptor)
-                .addInterceptor(loggingInterceptor)
                 .build()
         }
 
@@ -87,18 +100,12 @@ abstract class AIModule {
         @Provides
         @Singleton
         @Named("OpenAIRetrofit")
-        fun provideOpenAIRetrofit(): Retrofit {
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            }
-            
-            val client = OkHttpClient.Builder()
-                .addInterceptor(loggingInterceptor)
-                .build()
-            
+        fun provideOpenAIRetrofit(
+            @Named("BaseOkHttpClient") baseClient: OkHttpClient
+        ): Retrofit {
             return Retrofit.Builder()
                 .baseUrl(OPENAI_BASE_URL)
-                .client(client)
+                .client(baseClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
         }
@@ -114,18 +121,12 @@ abstract class AIModule {
         @Provides
         @Singleton
         @Named("AnthropicRetrofit")
-        fun provideAnthropicRetrofit(): Retrofit {
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            }
-            
-            val client = OkHttpClient.Builder()
-                .addInterceptor(loggingInterceptor)
-                .build()
-            
+        fun provideAnthropicRetrofit(
+            @Named("BaseOkHttpClient") baseClient: OkHttpClient
+        ): Retrofit {
             return Retrofit.Builder()
                 .baseUrl(ANTHROPIC_BASE_URL)
-                .client(client)
+                .client(baseClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
         }
@@ -141,18 +142,12 @@ abstract class AIModule {
         @Provides
         @Singleton
         @Named("OpenRouterRetrofit")
-        fun provideOpenRouterRetrofit(): Retrofit {
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            }
-            
-            val client = OkHttpClient.Builder()
-                .addInterceptor(loggingInterceptor)
-                .build()
-            
+        fun provideOpenRouterRetrofit(
+            @Named("BaseOkHttpClient") baseClient: OkHttpClient
+        ): Retrofit {
             return Retrofit.Builder()
                 .baseUrl(OPENROUTER_BASE_URL)
-                .client(client)
+                .client(baseClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
         }
@@ -168,18 +163,12 @@ abstract class AIModule {
         @Provides
         @Singleton
         @Named("NimRetrofit")
-        fun provideNimRetrofit(): Retrofit {
-            val loggingInterceptor = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            }
-            
-            val client = OkHttpClient.Builder()
-                .addInterceptor(loggingInterceptor)
-                .build()
-            
+        fun provideNimRetrofit(
+            @Named("BaseOkHttpClient") baseClient: OkHttpClient
+        ): Retrofit {
             return Retrofit.Builder()
                 .baseUrl(NIM_BASE_URL)
-                .client(client)
+                .client(baseClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
         }

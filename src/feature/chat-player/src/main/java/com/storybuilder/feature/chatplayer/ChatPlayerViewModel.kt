@@ -8,9 +8,13 @@ import com.storybuilder.domain.model.InputMode
 import com.storybuilder.domain.model.SenderType
 import com.storybuilder.domain.model.Story
 import com.storybuilder.domain.model.StoryBeat
+import com.storybuilder.domain.repository.CharacterRepository
 import com.storybuilder.domain.repository.ChatMessageRepository
 import com.storybuilder.domain.repository.GenreRepository
 import com.storybuilder.domain.repository.StoryBeatRepository
+import com.storybuilder.domain.repository.StoryRepository
+import com.storybuilder.data.stt.STTClient
+import com.storybuilder.data.stt.STTResult
 import com.storybuilder.domain.usecase.GenerateNextBeatUseCase
 import com.storybuilder.domain.usecase.SelectOptionUseCase
 import com.storybuilder.domain.usecase.SubmitTextChoiceUseCase
@@ -29,8 +33,14 @@ data class ChatUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val story: Story? = null,
+    val characterName: String = "",
+    val characterDescription: String = "",
+    val genreName: String = "",
+    val genreToneGuidelines: String = "",
     val inputMode: InputMode = InputMode.SUGGESTED_OPTIONS,
-    val isKeyboardVisible: Boolean = false
+    val isKeyboardVisible: Boolean = false,
+    val isListening: Boolean = false,
+    val speechInput: String = ""
 )
 
 @HiltViewModel
@@ -38,7 +48,10 @@ class ChatPlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val chatMessageRepository: ChatMessageRepository,
     private val storyBeatRepository: StoryBeatRepository,
+    private val storyRepository: StoryRepository,
+    private val characterRepository: CharacterRepository,
     private val genreRepository: GenreRepository,
+    private val sttClient: STTClient,
     private val generateNextBeatUseCase: GenerateNextBeatUseCase,
     private val selectOptionUseCase: SelectOptionUseCase,
     private val submitTextChoiceUseCase: SubmitTextChoiceUseCase
@@ -50,24 +63,7 @@ class ChatPlayerViewModel @Inject constructor(
     // For Phase 4: Use storyId from navigation or create new story
     private val storyId: String = savedStateHandle.get<String>("storyId") ?: "test-story-001"
     
-    // Hardcoded test data for now - in production, these would come from the story creation flow
-    private val characterName = "Detective Sarah Blackwood"
-    private val characterDescription = "A sharp-witted private investigator with a troubled past"
-    private val genreName = "Mystery/Noir"
-    private val genreToneGuidelines = "Create a noir atmosphere with shadows, rain, and moral ambiguity. " +
-        "Focus on the gritty underbelly of the city and complex characters with hidden motives."
-    
-    private val story = Story(
-        id = storyId,
-        title = "The Mystery of Blackwood Manor",
-        genreId = "mystery",
-        characterId = "detective-001",
-        darknessLevel = 7,
-        suggestOptionsEnabled = true
-    )
-
     init {
-        _uiState.value = ChatUiState(story = story)
         initializeStory()
     }
 
@@ -75,26 +71,67 @@ class ChatPlayerViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            // Try to get existing beats first
-            storyBeatRepository.getBeatsForStory(storyId).collect { beats ->
-                if (beats.isEmpty()) {
-                    // Generate opening beat
-                    generateOpeningBeat()
-                } else {
-                    // Load existing beats
-                    loadBeats(beats)
+            // 1. Load Story metadata
+            storyRepository.getStoryById(storyId).collect { story ->
+                if (story == null) {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Story not found",
+                        isLoading = false
+                    )
+                    return@collect
+                }
+                
+                // 2. Load Character and Genre details
+                val character = characterRepository.getCharacterById(story.characterId)
+                val genre = genreRepository.getGenreById(story.genreId)
+                
+                _uiState.value = _uiState.value.copy(
+                    story = story,
+                    characterName = character?.name ?: "Unknown Character",
+                    characterDescription = character?.let { "${it.archetype} - ${it.traits.joinToString(", ")}. ${it.backstory ?: ""}" } ?: "No description provided",
+                    genreName = genre?.name ?: "Unknown Genre",
+                    genreToneGuidelines = genre?.toneGuidelines ?: "Traditional storytelling"
+                )
+
+                // 3. Collect messages for UI
+                launch {
+                    chatMessageRepository.getMessagesForStory(storyId).collect { messages ->
+                        _uiState.value = _uiState.value.copy(
+                            messages = messages,
+                            isLoading = false
+                        )
+                    }
+                }
+
+                // 4. Collect beats for logic
+                launch {
+                    storyBeatRepository.getBeatsForStory(storyId).collect { beats ->
+                        if (beats.isEmpty()) {
+                            generateOpeningBeat(story)
+                        } else {
+                            val sortedBeats = beats.sortedBy { it.sequenceOrder }
+                            val currentBeat = sortedBeats.lastOrNull { 
+                                it.selectedOptionIndex != null || it.freeTextInput != null 
+                            } ?: sortedBeats.lastOrNull()
+                            
+                            _uiState.value = _uiState.value.copy(
+                                currentBeat = currentBeat,
+                                currentOptions = currentBeat?.suggestedOptions ?: emptyList()
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 
-    private suspend fun generateOpeningBeat() {
+    private suspend fun generateOpeningBeat(story: Story) {
         generateNextBeatUseCase.generateOpeningBeat(
             story = story,
-            characterName = characterName,
-            characterDescription = characterDescription,
-            genreName = genreName,
-            genreToneGuidelines = genreToneGuidelines
+            characterName = _uiState.value.characterName,
+            characterDescription = _uiState.value.characterDescription,
+            genreName = _uiState.value.genreName,
+            genreToneGuidelines = _uiState.value.genreToneGuidelines
         ).fold(
             onSuccess = { beat ->
                 addNarratorMessage(beat)
@@ -108,59 +145,6 @@ class ChatPlayerViewModel @Inject constructor(
         )
     }
 
-    private fun loadBeats(beats: List<StoryBeat>) {
-        val messages = mutableListOf<ChatMessage>()
-        val sortedBeats = beats.sortedBy { it.sequenceOrder }
-        
-        sortedBeats.forEach { beat ->
-            // Add narrator message
-            messages.add(
-                ChatMessage(
-                    storyId = storyId,
-                    senderType = SenderType.NARRATOR,
-                    content = beat.narratorText
-                )
-            )
-            
-            // Add user message if option was selected or free text was entered
-            val freeText = beat.freeTextInput
-            val selectedIndex = beat.selectedOptionIndex
-            
-            when {
-                freeText != null -> {
-                    messages.add(
-                        ChatMessage(
-                            storyId = storyId,
-                            senderType = SenderType.USER,
-                            content = freeText
-                        )
-                    )
-                }
-                selectedIndex != null && selectedIndex >= 0 -> {
-                    beat.suggestedOptions?.getOrNull(selectedIndex)?.let { option ->
-                        messages.add(
-                            ChatMessage(
-                                storyId = storyId,
-                                senderType = SenderType.USER,
-                                content = option
-                            )
-                        )
-                    }
-                }
-            }
-        }
-
-        val currentBeat = sortedBeats.lastOrNull { 
-            it.selectedOptionIndex != null || it.freeTextInput != null 
-        } ?: sortedBeats.lastOrNull()
-
-        _uiState.value = _uiState.value.copy(
-            messages = messages,
-            currentBeat = currentBeat,
-            currentOptions = currentBeat?.suggestedOptions ?: emptyList(),
-            isLoading = false
-        )
-    }
 
     private fun addNarratorMessage(beat: StoryBeat) {
         val message = ChatMessage(
@@ -175,9 +159,9 @@ class ChatPlayerViewModel @Inject constructor(
         viewModelScope.launch {
             chatMessageRepository.insertMessage(message)
         }
-
+        
+        // We no longer update uiState.messages manually here as it's collected from repo
         _uiState.value = _uiState.value.copy(
-            messages = _uiState.value.messages + message,
             currentBeat = beat,
             currentOptions = beat.suggestedOptions ?: emptyList(),
             isLoading = false
@@ -213,6 +197,7 @@ class ChatPlayerViewModel @Inject constructor(
         if (userInput.isBlank()) return
         
         viewModelScope.launch {
+            val story = _uiState.value.story ?: return@launch
             _uiState.value = _uiState.value.copy(isLoading = true)
             
             val currentBeat = _uiState.value.currentBeat
@@ -224,10 +209,10 @@ class ChatPlayerViewModel @Inject constructor(
                 story = story,
                 currentBeat = currentBeat,
                 userInput = userInput,
-                characterName = characterName,
-                characterDescription = characterDescription,
-                genreName = genreName,
-                genreToneGuidelines = genreToneGuidelines,
+                characterName = _uiState.value.characterName,
+                characterDescription = _uiState.value.characterDescription,
+                genreName = _uiState.value.genreName,
+                genreToneGuidelines = _uiState.value.genreToneGuidelines,
                 previousBeats = previousBeats.filter { 
                     currentBeat?.let { current -> it.sequenceOrder < current.sequenceOrder } ?: true 
                 }
@@ -238,10 +223,7 @@ class ChatPlayerViewModel @Inject constructor(
 
             when {
                 nextBeat != null -> {
-                    // Add user message to chat
-                    _uiState.value = _uiState.value.copy(
-                        messages = _uiState.value.messages + result.userMessage
-                    )
+                    // No need to manually update messages, repo collection handles it
                     addNarratorMessage(nextBeat)
                 }
                 error != null -> {
@@ -255,17 +237,54 @@ class ChatPlayerViewModel @Inject constructor(
     }
 
     /**
-     * Handle voice input (placeholder for STT integration)
+     * Handle voice input using STTClient
      */
     fun onVoiceInputRequested() {
-        // Placeholder for STT integration
-        println("[ChatPlayerViewModel] Voice input requested - STT integration placeholder")
+        if (_uiState.value.isListening) {
+            sttClient.stopListening()
+            _uiState.value = _uiState.value.copy(isListening = false)
+            return
+        }
+
+        viewModelScope.launch {
+            sttClient.startListening().collect { result ->
+                when (result) {
+                    is STTResult.Ready -> {
+                        _uiState.value = _uiState.value.copy(
+                            isListening = true,
+                            speechInput = ""
+                        )
+                    }
+                    is STTResult.Partial -> {
+                        _uiState.value = _uiState.value.copy(
+                            speechInput = result.text
+                        )
+                    }
+                    is STTResult.Success -> {
+                        _uiState.value = _uiState.value.copy(
+                            isListening = false,
+                            speechInput = ""
+                        )
+                        if (result.text.isNotBlank()) {
+                            submitFreeText(result.text)
+                        }
+                    }
+                    is STTResult.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            isListening = false,
+                            error = result.message
+                        )
+                    }
+                }
+            }
+        }
     }
 
     fun selectOption(optionIndex: Int) {
         val currentBeat = _uiState.value.currentBeat ?: return
         
         viewModelScope.launch {
+            val story = _uiState.value.story ?: return@launch
             _uiState.value = _uiState.value.copy(isLoading = true)
             
             val previousBeats = storyBeatRepository.getBeatsForStory(storyId).first()
@@ -275,10 +294,10 @@ class ChatPlayerViewModel @Inject constructor(
                 story = story,
                 currentBeat = currentBeat,
                 optionIndex = optionIndex,
-                characterName = characterName,
-                characterDescription = characterDescription,
-                genreName = genreName,
-                genreToneGuidelines = genreToneGuidelines,
+                characterName = _uiState.value.characterName,
+                characterDescription = _uiState.value.characterDescription,
+                genreName = _uiState.value.genreName,
+                genreToneGuidelines = _uiState.value.genreToneGuidelines,
                 previousBeats = previousBeats.filter { it.sequenceOrder < currentBeat.sequenceOrder }
             )
 
@@ -307,14 +326,17 @@ class ChatPlayerViewModel @Inject constructor(
                 content = content
             )
             chatMessageRepository.insertMessage(message)
-            _uiState.value = _uiState.value.copy(
-                messages = _uiState.value.messages + message
-            )
+            // No manual UI update, collected from flow
         }
     }
 
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun retry() {
+        dismissError()
+        initializeStory()
     }
 
     /**

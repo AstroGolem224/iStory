@@ -25,7 +25,6 @@ import javax.inject.Singleton
 
 @Singleton
 class StoryAIRepositoryImpl @Inject constructor(
-    private val aiClient: AIClient,
     private val promptFactory: PromptFactory,
     private val responseParser: ResponseParser,
     private val clientFactory: AIClientFactory,
@@ -38,7 +37,7 @@ class StoryAIRepositoryImpl @Inject constructor(
     private val _activeProvider = MutableStateFlow(ApiProvider.GOOGLE)
     
     init {
-        // Load active provider from settings
+        // Load active provider from settings asynchronously, but initial GOOGLE default is safe
         CoroutineScope(Dispatchers.IO).launch {
             providerConfigRepository.getActiveProvider().collect { provider ->
                 _activeProvider.value = provider
